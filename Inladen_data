@@ -1,0 +1,70 @@
+# CAELI - Data downloaden mcd19a2.
+
+import requests
+import pandas as pd
+from io import StringIO
+
+# In deze sheet laden we eerst de data in, vervolgens filteren we de datapunten
+# en maken we een complete dataset die we later gebruiken
+
+# ------
+# 1. Data inladen & bruikbare data filteren
+# ------
+
+# We downloaden de data in m.b.v. de API die CAELI ons gegeven heeft, in deze 
+# url link staan alle parameters.
+url = "https://api.caeli.space/download?dataset=mcd19a2_grid_1km&date=2026-07-01&columns=aod_qa%2Caod_uncertainty%2Cidx_lat%2Cidx_lon%2Coptical_depth_055&pt_region=N_EU&pt_tile=2052%2C2053"
+
+# We zetten alles uiteindelijk in 1 grote dataset.
+dataset = []
+
+# We downloaden de data in m.b.v. de API, dit kan +- 45 minuten duren.
+for day in range(1,32):
+    print(day)
+    
+    # Omdat we elke dag van de maand Juli eruit willen halen passen we de datum
+    # aan in de url
+    datum = f"2026-07-{day:02d}" #<--- Dag is integer waarde met minimaal 2 cijfers
+    huidige_url = url.replace("2026-07-01",datum)
+    
+    # We halen nu de data op
+    antwoord = requests.get(huidige_url)
+    
+    nieuwe_data = pd.read_csv(StringIO(antwoord.text))
+    
+    # Nu de data ingeladen is filteren we de data op enkel de punten die daadwerkelijk
+    # gebruikt kunnen worden.
+    nieuwe_data = nieuwe_data.dropna(subset=['optical_depth_055'])
+    
+    # Nu check ik of de kwaliteit wel goed is
+    nieuwe_data["qa_aod_flag"] = (nieuwe_data["aod_qa"].values.astype("int64") >> 8) & 0b1111
+    nieuwe_data = nieuwe_data[nieuwe_data["qa_aod_flag"] == 0].copy()
+    
+    # Ook voegen we een nieuwe kolom met de datum erbij
+    nieuwe_data['datum'] = datum
+    
+    # We voegen het nu bij de complete dataset
+    if not nieuwe_data.empty:
+        dataset.append(nieuwe_data)
+        
+    print(f"{datum}: {len(nieuwe_data)} rijen")
+    
+
+# ------
+# 2. Data samenoegen en opslaan
+# ------
+
+# We gaan nu alles samenvoegen en als een nieuw csv bestand opslaan.
+if dataset:
+    dataset = pd.concat(dataset, ignore_index=True)
+    dataset.to_csv("mcd19a2_juli_2026.csv", index=False)
+
+    print("\nKlaar!")
+    print(f"Totaal aantal rijen: {len(dataset)}")
+
+
+else:
+    print("Geen data gevonden.")
+    
+
+# Duurde: 43:31 minuten
