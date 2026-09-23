@@ -1,0 +1,33 @@
+import pandas as pd
+
+# 1. Laad de dataset in
+df = pd.read_csv('mcd19a2_juli_2026.csv')
+
+# 2. Zorg dat de datum/tijd kolom een datetime object is en haal de pure datum eruit
+df['timestamp'] = pd.to_datetime(df['datum'])
+df['alleen_datum'] = df['timestamp'].dt.date
+
+# 3. Markeer elke meting als wolkenvrij (True) of bewolkt (False)
+# We negeren de qa_aod_flag tijdelijk omdat deze eerder 0 opleverde.
+# Als er een AOD-meting aanwezig is (not null), kon de satelliet de grond zien en was het dus onbewolkt.
+df['is_wolkenvrij'] = df['optical_depth_055'].notnull()
+
+# 4. Groepeer de data per dag en tel de metingen
+dag_overzicht = df.groupby('alleen_datum').agg(
+    totale_passages=('is_wolkenvrij', 'count'),          # Totaal aantal rijen voor die dag
+    aantal_zonnige_metingen=('is_wolkenvrij', 'sum')     # Aantal rijen met een geldige AOD meting
+).reset_index()
+
+# 5. Stel je grenswaarde in
+# Een dag wordt als 'zonnig' gemarkeerd als het aantal zonnige metingen hoger is dan dit getal.
+grenswaarde_zonnige_metingen = 200000 
+
+# 6. Bepaal of de dag zonnig is
+dag_overzicht['is_zonnige_dag'] = dag_overzicht['aantal_zonnige_metingen'] > grenswaarde_zonnige_metingen
+
+# 7. Print het resultaat naar het scherm
+print(dag_overzicht)
+
+# 8. Sla de output op naar een nieuw CSV-bestand
+dag_overzicht.to_csv('dagen_zonnig_of_niet.csv', index=False)
+print("\nDe analyse is voltooid en opgeslagen als 'dagen_zonnig_of_niet.csv'.")
