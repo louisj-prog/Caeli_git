@@ -1,26 +1,26 @@
+# Dit script doet het volgende:
+    
+# Het laad de complete MODIS dataset in van de maand Juli.
+# Vervolgens maken we een kolom aan van orbit en satelliet
+# Hierna kijken per orbit of het een onbewolkte dag is ja of nee.
+
 import pandas as pd
 
-# Laad de dataset in
-df = pd.read_csv('mcd19a2_juli_2026.csv')
+#Data inladen
+MODIS_Juli = pd.read_csv('MODIS_Juli.csv')
 
-#per dag
-df['timestamp'] = pd.to_datetime(df['datum'])
-df['alleen_datum'] = df['timestamp'].dt.date
+# Hier splitten per orbit
+MODIS_Juli['idx_utc'] = pd.to_datetime(MODIS_Juli['idx_utc'])
 
+# Functie om per dag de unieke tijdstippen te nummeren als orbit
+fn = lambda g: g.assign(
+    orbit_nr=pd.factorize(g['idx_utc'])[0] + 1,
+    orbit=g['datum'].astype(str) + '_orbit_' + (pd.factorize(g['idx_utc'])[0] + 1).astype(str)
+)
 
-df['is_wolkenvrij'] = df['optical_depth_055'].notnull()
+# Pas dit toe per dag
+MODIS_Juli = MODIS_Juli.groupby('datum', group_keys=False).apply(fn)
 
-# 4. Groepeer de data per dag en tel de metingen
-dag_overzicht = df.groupby('alleen_datum').agg(
-    totale_passages=('is_wolkenvrij', 'count'),          
-    aantal_zonnige_metingen=('is_wolkenvrij', 'sum')     
-).reset_index()
+# Bekijk het resultaat
+print(MODIS_Juli[['datum', 'idx_utc', 'orbit']].head(10))
 
-# We maken een grenswaarde van per dag 
-grenswaarde_zonnige_metingen = 200000 
-
-
-dag_overzicht['is_zonnige_dag'] = dag_overzicht['aantal_zonnige_metingen'] > grenswaarde_zonnige_metingen
-print(dag_overzicht)
-dag_overzicht.to_csv('dagen_zonnig_of_niet.csv', index=False)
-print("\nDe analyse is voltooid en opgeslagen als 'dagen_zonnig_of_niet.csv'.")
