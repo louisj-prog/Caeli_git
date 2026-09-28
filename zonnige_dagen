@@ -1,7 +1,7 @@
 # Dit script doet het volgende:
     
 # Het laad de complete MODIS dataset in van de maand Juli.
-# Vervolgens maken we een kolom aan van orbit en satelliet
+# Vervolgens maken we een kolom aan van orbit (en later satelliet)
 # Hierna kijken per orbit of het een onbewolkte dag is ja of nee.
 
 import pandas as pd
