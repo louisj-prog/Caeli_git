@@ -13,7 +13,7 @@ from io import StringIO
 
 # We downloaden de data in m.b.v. de API die CAELI ons gegeven heeft, in deze 
 # url link staan alle parameters.
-url = "https://api.caeli.space/download?dataset=mcd19a2_grid_1km&date=2026-07-01&columns=aod_qa%2Caod_uncertainty%2Cidx_lat%2Cidx_lon%2Coptical_depth_055&pt_region=N_EU&pt_tile=2052%2C2053"
+url = "https://api.caeli.space/download?dataset=mcd19a2_grid_1km&date=2026-07-01&columns=aod_qa%2Caod_uncertainty%2Cidx_lat%2Cidx_lon%2Cidx_utc%2Coptical_depth_055&pt_region=N_EU&pt_tile=2052%2C2053"
 
 # We zetten alles uiteindelijk in 1 grote dataset.
 dataset = []
