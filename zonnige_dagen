@@ -1,26 +1,79 @@
-# Dit script doet het volgende:
-    
-# Het laad de complete MODIS dataset in van de maand Juli.
-# Vervolgens maken we een kolom aan van orbit (en later satelliet)
-# Hierna kijken per orbit of het een onbewolkte dag is ja of nee.
+# CAELI - AOD kaart maken voor een idx_utc met > 20.000 rijen
 
 import pandas as pd
+import matplotlib.pyplot as plt
+import random
 
-#Data inladen
-MODIS_Juli = pd.read_csv('MODIS_Juli.csv')
+# -------------------------
+# 1. Dataset inladen & filteren op > 20.000 rijen
+# -------------------------
 
-# Hier splitten per orbit
-MODIS_Juli['idx_utc'] = pd.to_datetime(MODIS_Juli['idx_utc'])
+# Voeg eventueel sep=';' toe als jouw CSV een puntkomma gebruikt
+dataset = pd.read_csv("MODIS_Juli.csv")
 
-# Functie om per dag de unieke tijdstippen te nummeren als orbit
-fn = lambda g: g.assign(
-    orbit_nr=pd.factorize(g['idx_utc'])[0] + 1,
-    orbit=g['datum'].astype(str) + '_orbit_' + (pd.factorize(g['idx_utc'])[0] + 1).astype(str)
+# Converteer kolommen naar getallen om fouten te voorkomen
+dataset['idx_lat'] = pd.to_numeric(dataset['idx_lat'], errors='coerce')
+dataset['idx_lon'] = pd.to_numeric(dataset['idx_lon'], errors='coerce')
+dataset['optical_depth_055'] = pd.to_numeric(dataset['optical_depth_055'], errors='coerce')
+
+# Verwijder lege rijen
+dataset = dataset.dropna(subset=['idx_lat', 'idx_lon', 'optical_depth_055', 'idx_utc'])
+
+# Tel hoeveel rijen elke idx_utc heeft en selecteer alleen die met meer dan 20.000 rijen
+telt_per_orbit = dataset['idx_utc'].value_counts()
+grote_orbits = telt_per_orbit[telt_per_orbit > 175000].index.tolist()
+
+if len(grote_orbits) > 0:
+    # Kies willekeurig één idx_utc uit de grote orbits
+    gekozen_utc = random.choice(grote_orbits)
+    
+    # Filter de dataset voor dit specifieke moment
+    dataset_gekozen = dataset[dataset['idx_utc'] == gekozen_utc].copy()
+    
+    print(f"Gekozen idx_utc: {gekozen_utc}")
+    print(f"Aantal datapunten in deze orbit: {len(dataset_gekozen)} (voldoet aan de eis > 20.000)")
+    print(f"Longitude bereik: {dataset_gekozen['idx_lon'].min():.2f} tot {dataset_gekozen['idx_lon'].max():.2f}")
+    print(f"Latitude bereik: {dataset_gekozen['idx_lat'].min():.2f} tot {dataset_gekozen['idx_lat'].max():.2f}")
+else:
+    print("Geen enkele idx_utc in de dataset heeft meer dan 20.000 rijen.")
+    exit()
+
+# -------------------------
+# 2. Kleurenschaal bepalen
+# -------------------------
+
+vmin = dataset_gekozen["optical_depth_055"].quantile(0.01)
+vmax = dataset_gekozen["optical_depth_055"].quantile(0.99)
+
+
+# -------------------------
+# 3. Kaart maken
+# -------------------------
+
+plt.figure(figsize=(12, 8))
+
+kaart = plt.scatter(
+    dataset_gekozen["idx_lon"],
+    dataset_gekozen["idx_lat"],
+    c=dataset_gekozen["optical_depth_055"],
+    cmap="viridis",
+    vmin=vmin,
+    vmax=vmax,
+    marker="s",
+    s=2,                  # Puntgrootte
+    linewidths=0
 )
 
-# Pas dit toe per dag
-MODIS_Juli = MODIS_Juli.groupby('datum', group_keys=False).apply(fn)
+# Kleurenbalk
+cbar = plt.colorbar(kaart)
+cbar.set_label("Optical Depth 0.55 µm")
 
-# Bekijk het resultaat
-print(MODIS_Juli[['datum', 'idx_utc', 'orbit']].head(10))
+# Assen
+plt.xlabel("Longitude")
+plt.ylabel("Latitude")
 
+plt.title(f"Aerosol Optical Depth - {gekozen_utc}")
+
+plt.grid(alpha=0.2)
+
+plt.show()
