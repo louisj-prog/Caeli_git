@@ -1,11 +1,11 @@
-# CAELI - AOD kaart maken voor een idx_utc met > 20.000 rijen
+# CAELI - AOD kaart maken voor een idx_utc met > 175.000 rijen
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import random
 
 # -------------------------
-# 1. Dataset inladen & filteren op > 20.000 rijen
+# 1. Dataset inladen & filteren op > 175.000 rijen
 # -------------------------
 
 # Voeg eventueel sep=';' toe als jouw CSV een puntkomma gebruikt
@@ -19,7 +19,7 @@ dataset['optical_depth_055'] = pd.to_numeric(dataset['optical_depth_055'], error
 # Verwijder lege rijen
 dataset = dataset.dropna(subset=['idx_lat', 'idx_lon', 'optical_depth_055', 'idx_utc'])
 
-# Tel hoeveel rijen elke idx_utc heeft en selecteer alleen die met meer dan 20.000 rijen
+# Tel hoeveel rijen elke idx_utc heeft en selecteer alleen die met meer dan 175.000 rijen
 telt_per_orbit = dataset['idx_utc'].value_counts()
 grote_orbits = telt_per_orbit[telt_per_orbit > 175000].index.tolist()
 
