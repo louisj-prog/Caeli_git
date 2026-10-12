@@ -3,7 +3,7 @@ import pandas as pd
 # Zorg ervoor dat Pandas alle rijen laat zien en niets afkort
 pd.set_option('display.max_rows', None)
 
-# Laad de dataset (pas eventueel sep=';' aan als jouw CSV een puntkomma gebruikt)
+# Laad de dataset
 dataset = pd.read_csv("MODIS_Juli.csv")
 
 # Tel het aantal rijen per idx_utc en sorteer op tijdstempel (chronologisch)
