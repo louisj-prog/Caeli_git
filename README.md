@@ -15,3 +15,6 @@ Op dit moment zijn we nog bezig met dit project. Hier een korte uitleg van de sc
 4. Zonnige dagen
    Dit is een testscript wat nog niet af is. We moeten onbewolkte momenten vinden.
    (Dus geen dagen).
+
+5. Interpoleren
+   In dit script interpoleren we de ERA5 data met de MODIS data m.b.v. xarray.
